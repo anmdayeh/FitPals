@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FitPals — Group Fitness Tracker</title>
+  <link rel="stylesheet" href="./style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Firebase v10 Modular SDK (app, auth, firestore) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+    // ======= 🔧 Replace with your Firebase project config =======
+    window.FITPALS_FIREBASE_CONFIG = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    // ============================================================
+
+    // Initialize Firebase early so app.js can consume it
+    const app = initializeApp(window.FITPALS_FIREBASE_CONFIG);
+    window.fp = {
+      app,
+      auth: getAuth(app),
+      db: getFirestore(app),
+      onAuthStateChanged,
+      signInAnonymously,
+      signOut,
+      updateProfile
+    };
+  </script>
+  <script defer type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="name">FitPals <span class="muted">v1</span></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab" data-tab="auth" aria-current="page">Join</button>
+      <button class="tab" data-tab="log">Daily Log</button>
+      <button class="tab" data-tab="summary">Weekly Summary</button>
+      <button class="tab" data-tab="graphs">Graphs</button>
+      <button class="tab" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab" data-tab="chat">Messages</button>
+      <button class="tab" data-tab="settings">Settings</button>
+      <span class="right badge" id="userBadge">Not signed in</span>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- AUTH / GROUP -->
+    <section id="tab-auth" class="panel">
+      <h2>Join or Create Group</h2>
+      <div class="grid g2">
+        <div>
+          <label>Display name</label>
+          <input id="name" placeholder="e.g., Alex" />
+        </div>
+        <div>
+          <label>Choose group</label>
+          <div class="row">
+            <select id="groupList"></select>
+            <button id="refreshGroups">↻</button>
+          </div>
+          <div class="help">Pick an existing group or create a new one below.</div>
+        </div>
+      </div>
+      <div class="grid g3">
+        <div>
+          <label>Create/Join group code</label>
+          <input id="groupCode" placeholder="e.g., fit-friends" />
+        </div>
+        <div>
+          <label>Group password</label>
+          <input id="groupPass" type="password" placeholder="Required to join" />
+        </div>
+        <div style="align-self:end">
+          <button class="primary" id="btnJoin">Join Group</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <button id="btnAnon" class="ghost">Sign in Anonymously</button>
+        <button id="btnSignOut" class="danger">Sign out</button>
+      </div>
+      <p class="help small">Authentication is anonymous by default. Your display name is visible to the group.</p>
+    </section>
+
+    <!-- DAILY LOG -->
+    <section id="tab-log" class="panel hidden">
+      <h2>Daily Log</h2>
+      <div class="grid g3">
+        <div><label>Date</label><input type="date" id="dayDate"></div>
+        <div><label>Water (ml)</label><input type="number" id="water" min="0" step="100"></div>
+        <div><label>Steps</label><input type="number" id="steps" min="0" step="100"></div>
+      </div>
+
+      <h3>Meals</h3>
+      <div class="grid g3">
+        <select id="mealType">
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Pre-workout</option><option>Post-workout</option>
+        </select>
+        <input id="mealTime" type="time">
+        <input id="mealNotes" placeholder="Notes (optional)">
+      </div>
+      <div class="grid g4">
+        <input id="calories" type="number" min="0" step="1" placeholder="kcal">
+        <input id="protein" type="number" min="0" step="1" placeholder="protein g">
+        <input id="carbs" type="number" min="0" step="1" placeholder="carbs g">
+        <input id="fat" type="number" min="0" step="1" placeholder="fat g">
+      </div>
+      <div class="row">
+        <button id="addMeal" class="success">Add meal</button>
+      </div>
+      <div id="mealsList" class="list"></div>
+
+      <h3>Exercise</h3>
+      <div class="grid g4">
+        <select id="exType">
+          <option>Run</option><option>Walk</option><option>Bike</option><option>Swim</option><option>Strength</option><option>Yoga</option><option>HIIT</option><option>Sports</option>
+        </select>
+        <input id="exTime" type="time">
+        <input id="exDuration" type="number" min="0" step="1" placeholder="Duration (min)">
+        <input id="exCals" type="number" min="0" step="1" placeholder="Calories burned">
+      </div>
+      <div class="grid g3">
+        <input id="exDist" type="number" min="0" step="0.01" placeholder="Distance (km)">
+        <input id="exSteps" type="number" min="0" step="1" placeholder="Steps">
+        <input id="exHr" type="number" min="0" step="1" placeholder="Avg HR (bpm)">
+      </div>
+      <div class="row">
+        <button id="addEx" class="success">Add exercise</button>
+      </div>
+      <div id="exList" class="list"></div>
+
+      <div class="sep"></div>
+      <div class="grid g4" id="kpi"></div>
+    </section>
+
+    <!-- WEEKLY SUMMARY -->
+    <section id="tab-summary" class="panel hidden">
+      <h2>Weekly Summary</h2>
+      <div id="weekTable" class="table"></div>
+      <div class="row"><button id="exportCSV">Export CSV</button></div>
+    </section>
+
+    <!-- GRAPHS -->
+    <section id="tab-graphs" class="panel hidden">
+      <h2>Trends</h2>
+      <div class="grid g3">
+        <div>
+          <label>Metric</label>
+          <select id="metricSelect">
+            <option value="calories">Calories (intake)</option>
+            <option value="protein">Protein (g)</option>
+            <option value="exMinutes">Exercise (min)</option>
+            <option value="exCalories">Exercise calories</option>
+            <option value="water">Water (ml)</option>
+            <option value="steps">Steps</option>
+            <option value="weight">Body weight (kg)</option>
+          </select>
+        </div>
+        <div>
+          <label>Group members</label>
+          <select id="memberMulti" multiple size="4"></select>
+        </div>
+        <div style="align-self:end">
+          <button id="drawChart" class="primary">Update Chart</button>
+        </div>
+      </div>
+      <canvas id="chart" height="120"></canvas>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section id="tab-leaderboard" class="panel hidden">
+      <h2>Leaderboard</h2>
+      <div class="grid g3">
+        <select id="range">
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Year</option>
+          <option value="all">All time</option>
+        </select>
+        <select id="sortBy">
+          <option value="points">Points</option>
+          <option value="streak">Streak</option>
+          <option value="exMins">Exercise min</option>
+          <option value="protein">Protein (g)</option>
+          <option value="caloriesNet">Net calories</option>
+        </select>
+        <button id="recalc" class="primary">Recalculate</button>
+      </div>
+      <div id="board" class="list"></div>
+      <p class="help small">Points: +1 per meal/exercise; +1 per 500 steps/water; +2 if protein target (100g) reached; +2 for 30+ min exercise; +5 for full day logged.</p>
+    </section>
+
+    <!-- CHAT -->
+    <section id="tab-chat" class="panel hidden">
+      <h2>Group Messages</h2>
+      <div id="chat" class="chat"></div>
+      <div class="grid g4">
+        <input id="chatText" placeholder="Type a message" />
+        <button id="sendChat" class="primary">Send</button>
+        <button id="clearChat" class="danger">Clear my messages</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="panel hidden">
+      <h2>Settings</h2>
+      <div class="grid g3">
+        <div><label>Daily protein goal (g)</label><input type="number" id="goalProtein" min="0" step="5" value="100"></div>
+        <div><label>Daily water goal (ml)</label><input type="number" id="goalWater" min="0" step="100" value="2000"></div>
+        <div><label>Exercise goal (min)</label><input type="number" id="goalEx" min="0" step="5" value="30"></div>
+      </div>
+      <div class="row">
+        <button id="exportJSON" class="ghost">Export JSON</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+        <button id="importJSON">Import JSON</button>
+        <button id="resetLocal" class="danger">Reset local cache</button>
+      </div>
+    </section>
+
+    <footer class="footer">FitPals — open-source prototype. Works on desktop & mobile.</footer>
+  </main>
+</body>
+</html>
