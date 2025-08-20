@@ -1,0 +1,9 @@
+{
+  "name": "fitogether-github-pages",
+  "version": "1.0.0",
+  "description": "FitTogether static package for GitHub Pages with Utterances integration",
+  "main": "index.html",
+  "scripts": {},
+  "author": "",
+  "license": "MIT"
+}

@@ -5,210 +5,115 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>FitTogether — Group: MorningRunners</title>
   <link href="style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>FitTogether — GitHub Pages + Utterances</h1>
-      <div class="muted">Static site ready for GitHub Pages. Utterances (GitHub Issues) used for group messages.</div>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">FitTogether</div>
+      <div class="tag">GitHub Pages + Utterances (no server)</div>
     </header>
 
-    <main class="card">
-      <h2>Quick start — plug & play</h2>
-      <ol>
-        <li>Create a new GitHub repository and push the contents of this package (all files at repo root).</li>
-        <li>In the repo settings enable <strong>GitHub Pages</strong> (branch: main / root). Wait until site is published.</li>
-        <li>Install the <strong>Utterances</strong> GitHub App on your repository: <a href="https://github.com/apps/utterances" target="_blank">https://github.com/apps/utterances</a> (one click, choose your repo).</li>
-        <li>Open the published Pages URL (e.g. <code>https://&lt;your-user&gt;.github.io/&lt;repo&gt;/</code). Use the UI to set Group name and optionally enter your GitHub repo slug (owner/repo) — or edit <code>index.html</code> and set the <code>GH_REPO</code> constant (see README).</li>
-      </ol>
-      <p class="note">Utterances stores messages as GitHub issues on the repository you select. If the repo is public, messages are public. Utterances is not instant realtime but updates quickly; refresh the page to see new messages if needed.</p>
+    <main class="layout">
+      <section class="col col-left card">
+        <h3>Profile</h3>
+        <label>Your display name</label>
+        <input id="displayName" placeholder="e.g. Sam" />
+        <div class="row">
+          <button id="saveProfile">Save name</button>
+          <button id="clearProfile" class="btn-ghost">Clear</button>
+        </div>
+        <div id="profileMsg" class="muted"></div>
+
+        <hr/>
+
+        <h3>Groups</h3>
+        <label>Group name</label>
+        <input id="groupName" value="MorningRunners" />
+        <div class="row">
+          <button id="joinGroup">Join</button>
+          <button id="leaveGroup" class="btn-ghost">Leave</button>
+        </div>
+        <div id="groupMsg" class="muted"></div>
+
+        <div class="gh-block card-min">
+          <h4>GitHub Comments (Utterances)</h4>
+          <label>GitHub repo (owner/repo)</label>
+          <input id="ghRepo" placeholder="your-username/your-repo" />
+          <div class="row">
+            <button id="enableGh">Enable</button>
+            <button id="disableGh" class="btn-ghost">Disable</button>
+          </div>
+          <div id="ghStatus" class="muted small"></div>
+        </div>
+      </section>
+
+      <section class="col col-mid card">
+        <h3>Dashboard</h3>
+        <div class="metrics-row">
+          <div class="metric"><div class="metric-label">Avg BMR</div><div id="avgBmr">—</div></div>
+          <div class="metric"><div class="metric-label">Recomm. Intake</div><div id="recommIntake">—</div></div>
+          <div class="metric"><div class="metric-label">Weekly Loss</div><div id="weeklyLoss">—</div></div>
+        </div>
+
+        <div class="widgets" id="widgetsArea"></div>
+
+        <div class="chart-card">
+          <canvas id="weightChart" height="160"></canvas>
+        </div>
+
+        <h4>Aggregations</h4>
+        <div class="row">
+          <label>From</label><input id="aggFrom" type="date" />
+          <label>To</label><input id="aggTo" type="date" />
+          <button id="applyRange" class="btn-ghost">Apply</button>
+        </div>
+        <div id="aggResults" class="muted small"></div>
+
+        <hr/>
+
+        <h4>Group Chat</h4>
+        <div id="githubComments" style="margin-top:8px"></div>
+      </section>
+
+      <aside class="col col-right card">
+        <h3>Quick Entry</h3>
+        <label>Date</label><input id="entryDate" type="date" />
+        <label>Meal 1 Calories</label><input id="meal1" type="number" value="0" />
+        <label>Meal 2 Calories</label><input id="meal2" type="number" value="0" />
+        <label>Snacks Calories</label><input id="snacks" type="number" value="0" />
+        <label>Total Protein (g)</label><input id="protein" type="number" value="0" />
+        <label>Cardio Cals</label><input id="cardioCals" type="number" value="0" />
+        <label>Weight (kg)</label><input id="dailyWeight" type="number" step="0.1" />
+        <label>BP systolic</label><input id="bpSys" type="number" />
+        <label>BP diastolic</label><input id="bpDia" type="number" />
+        <label>Water cups</label><input id="water" type="number" value="0" />
+        <label>Note</label><input id="note" type="text" />
+        <div class="row">
+          <button id="saveEntry">Save entry</button>
+          <button id="exportCSV" class="btn-ghost">Export CSV</button>
+        </div>
+
+        <hr/>
+
+        <h4>Chat (local)</h4>
+        <div id="chatBox" class="chat-box"></div>
+        <div class="row">
+          <input id="chatTxt" placeholder="Message..." />
+          <button id="sendChat">Send</button>
+        </div>
+
+        <hr/>
+
+        <h4>Recent Entries</h4>
+        <div id="recentList" class="recent-list"></div>
+
+      </aside>
     </main>
 
-    <section class="card">
-      <h3>Profile</h3>
-      <label>Your display name</label><input id="displayName" placeholder="e.g. Sam" />
-      <div style="margin-top:8px">
-        <button id="saveProfile">Save name</button>
-      </div>
-      <div id="profileMsg" class="muted"></div>
-    </section>
-
-    <section class="card">
-      <h3>Groups</h3>
-      <label>Group name</label><input id="groupName" value="MorningRunners" />
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="joinGroup">Join</button>
-        <button id="leaveGroup" class="secondary">Leave</button>
-      </div>
-      <div id="groupMsg" class="muted"></div>
-
-      <hr style="margin:12px 0;border:0;border-top:1px solid #eee" />
-
-      <h4>GitHub Comments (Utterances)</h4>
-      <p class="muted">Option A (recommended): install Utterances GitHub App on your repo (link above) and then enter the repo slug below. The embedded comment box will map comments to the page title (we set it to the group name).</p>
-
-      <label>GitHub repo (owner/repo)</label><input id="ghRepo" placeholder="your-username/your-repo" />
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="enableGh">Enable GitHub Comments</button>
-        <button id="disableGh" class="secondary">Disable</button>
-      </div>
-      <div id="ghStatus" class="muted"></div>
-      <div id="githubComments" style="margin-top:8px"></div>
-    </section>
-
-    <section class="card">
-      <h3>Group Chat (local fallback)</h3>
-      <div id="chatBox" class="chat-box"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="chatTxt" placeholder="Message..." />
-        <button id="sendChat">Send</button>
-      </div>
-      <div class="muted note" style="margin-top:8px">If GitHub comments are enabled, use the embedded Utterances box below the GitHub Comments section to post messages that persist in the repo.</div>
-    </section>
-
-    <footer class="muted">This static package uses Utterances for cross-device persistent comments without requiring you to run a server.</footer>
+    <footer class="footer muted">Deploy to GitHub Pages. Install Utterances app on your repo to enable comments backed by GitHub Issues.</footer>
   </div>
 
-<script>
-// ------------ CONFIG -------------
-// You may optionally prefill your repo here so you don't have to type it in the UI.
-// Leave as empty string '' to set via the page UI after deploying.
-const GH_REPO = '';
-// ----------------------------------
-
-(function(){
-  // simple local storage for profile & groups
-  const storageKey = 'fit_github_pages_v1';
-  let state = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  state.profile = state.profile || {};
-  state.groups = state.groups || {};
-
-  // DOM
-  const displayNameEl = document.getElementById('displayName');
-  const saveProfileBtn = document.getElementById('saveProfile');
-  const profileMsg = document.getElementById('profileMsg');
-  const ghRepoEl = document.getElementById('ghRepo');
-  const enableGhBtn = document.getElementById('enableGh');
-  const disableGhBtn = document.getElementById('disableGh');
-  const ghStatus = document.getElementById('ghStatus');
-  const githubComments = document.getElementById('githubComments');
-  const groupNameEl = document.getElementById('groupName');
-  const joinGroupBtn = document.getElementById('joinGroup');
-  const leaveGroupBtn = document.getElementById('leaveGroup');
-  const groupMsg = document.getElementById('groupMsg');
-  const chatBox = document.getElementById('chatBox');
-  const chatTxt = document.getElementById('chatTxt');
-  const sendChatBtn = document.getElementById('sendChat');
-
-  // init UI
-  displayNameEl.value = state.profile.name || '';
-  ghRepoEl.value = state.gh_repo || GH_REPO || '';
-  if(GH_REPO) { ghRepoEl.value = GH_REPO; localStorage.setItem('fit_gh_repo', GH_REPO); localStorage.setItem('fit_gh_enabled','1'); initUtterances(GH_REPO); }
-
-  function saveState(){ localStorage.setItem(storageKey, JSON.stringify(state)); }
-
-  saveProfileBtn.addEventListener('click', ()=>{
-    state.profile.name = displayNameEl.value.trim() || 'Guest';
-    saveState();
-    profileMsg.textContent = 'Saved as ' + state.profile.name;
-    setTimeout(()=> profileMsg.textContent = '', 3000);
-  });
-
-  // Utterances integration
-  function initUtterances(repo){
-    githubComments.innerHTML = '';
-    if(!repo) { ghStatus.textContent = 'No repo configured.'; return; }
-    const s = document.createElement('script');
-    s.src = 'https://utteranc.es/client.js';
-    s.async = true;
-    s.setAttribute('repo', repo);
-    s.setAttribute('issue-term', 'title');
-    s.setAttribute('label', 'chat');
-    s.setAttribute('theme', 'github-light');
-    s.setAttribute('crossorigin', 'anonymous');
-    githubComments.appendChild(s);
-    ghStatus.textContent = 'Utterances loaded for ' + repo + '. First comment will create an issue in that repo.';
-  }
-
-  enableGhBtn.addEventListener('click', ()=>{
-    const repo = ghRepoEl.value.trim();
-    if(!repo) return alert('Enter repo slug (owner/repo)');
-    state.gh_repo = repo;
-    state.gh_enabled = true;
-    saveState();
-    initUtterances(repo);
-  });
-  disableGhBtn.addEventListener('click', ()=>{
-    state.gh_enabled = false;
-    localStorage.removeItem('fit_gh_repo');
-    githubComments.innerHTML = '';
-    ghStatus.textContent = 'Disabled';
-  });
-
-  // groups & chat (local fallback)
-  function renderChat(group){
-    chatBox.innerHTML = '';
-    const msgs = (state.groups[group] && state.groups[group].messages) || [];
-    msgs.slice(-200).forEach(m=>{
-      const el = document.createElement('div');
-      el.className = 'chat-line';
-      el.innerHTML = '<strong>' + escapeHtml(m.user) + '</strong> <span class="muted">' + (new Date(m.ts)).toLocaleString() + '</span><div>' + escapeHtml(m.text) + '</div>';
-      chatBox.appendChild(el);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  joinGroupBtn.addEventListener('click', ()=>{
-    const name = groupNameEl.value.trim();
-    if(!name) return alert('Enter group name');
-    if(!state.groups[name]) state.groups[name] = { messages: [] };
-    state.currentGroup = name;
-    saveState();
-    document.title = 'FitTogether — ' + name; // Utterances maps comments by page title
-    groupMsg.textContent = 'Joined ' + name + '. Use the embedded GitHub Comments box below to post persistent messages (if enabled).';
-    renderChat(name);
-    // if Utterances enabled and repo set, reload utterances so it maps to new title
-    const repo = state.gh_repo || ghRepoEl.value.trim() || GH_REPO;
-    if(state.gh_enabled || GH_REPO) initUtterances(repo);
-  });
-
-  leaveGroupBtn.addEventListener('click', ()=>{ state.currentGroup = null; saveState(); groupMsg.textContent = 'Left group'; chatBox.innerHTML = ''; document.title = 'FitTogether'; });
-
-  sendChatBtn.addEventListener('click', ()=>{
-    const grp = state.currentGroup || groupNameEl.value.trim();
-    if(!grp) return alert('Join a group first');
-    const user = state.profile.name || 'Guest';
-    const text = chatTxt.value.trim();
-    if(!text) return;
-    const msg = { user, text, ts: Date.now() };
-    state.groups[grp] = state.groups[grp] || { messages: [] };
-    state.groups[grp].messages.push(msg);
-    saveState();
-    renderChat(grp);
-    chatTxt.value = '';
-    // Note: persistent cross-device chat is via Utterances embedded widget (install app + post there).
-  });
-
-  // quick load stored utterances on page load if enabled
-  if(localStorage.getItem('fit_gh_enabled') === '1' || GH_REPO){ const repo = state.gh_repo || ghRepoEl.value.trim() || GH_REPO; if(repo) initUtterances(repo); }
-
-})(); // end
-</script>
-
-<style>
-body{font-family:system-ui,Segoe UI,Roboto,Arial;background:#f7fafc;color:#0f1724;margin:0;padding:24px}
-.container{max-width:820px;margin:0 auto}
-.card{background:#fff;border-radius:10px;padding:18px;margin-bottom:18px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
-label{display:block;font-size:13px;margin-bottom:6px;color:#334155}
-input{width:100%;padding:8px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px}
-button{background:#10b981;color:#042a1f;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
-button.secondary{background:transparent;border:1px solid #cbd5e1;color:#475569}
-.muted{color:#64748b;font-size:13px;margin-top:8px}
-.chat-box{height:160px;overflow:auto;border-radius:8px;background:#f1f5f9;padding:8px;margin-top:8px}
-.chat-line{padding:6px;border-bottom:1px solid #e6eef6}
-.note{font-size:13px;color:#475569}
-</style>
+  <script src="app.js"></script>
 </body>
 </html>
